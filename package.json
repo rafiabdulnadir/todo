@@ -1,0 +1,43 @@
+{
+  "name": "fullstack-todo-app",
+  "version": "1.0.0",
+  "description": "A full-stack Todo application built with React.js and ASP.NET Core",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend/TodoApi && dotnet watch run",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend/TodoApi && dotnet build --configuration Release",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "npm run dev",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend/TodoApi && dotnet restore",
+    "clean": "cd backend/TodoApi && dotnet clean && cd ../../frontend && npm run clean || true",
+    "test": "cd backend/TodoApi && dotnet test && cd ../../frontend && npm test",
+    "format": "cd frontend && npm run format || true"
+  },
+  "keywords": [
+    "todo",
+    "react",
+    "aspnet-core",
+    "fullstack",
+    "typescript",
+    "csharp"
+  ],
+  "author": "Todo App Developer",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/fullstack-todo-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/fullstack-todo-app/issues"
+  },
+  "homepage": "https://github.com/your-username/fullstack-todo-app#readme"
+}
