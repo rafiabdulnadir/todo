@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using TodoApi.Data;
 using TodoApi.DTOs;
 using TodoApi.Models;
@@ -8,6 +9,7 @@ namespace TodoApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class TodoController : ControllerBase
     {
         private readonly TodoContext _context;
@@ -19,13 +21,26 @@ namespace TodoApi.Controllers
             _logger = logger;
         }
 
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst("userId")?.Value;
+            if (!int.TryParse(userIdClaim, out int userId))
+            {
+                throw new UnauthorizedAccessException("Invalid user token");
+            }
+            return userId;
+        }
+
         // GET: api/todo
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TodoDto>>> GetTodos()
         {
             try
             {
+                var userId = GetCurrentUserId();
+                
                 var todos = await _context.Todos
+                    .Where(t => t.UserId == userId)
                     .OrderByDescending(t => t.CreatedAt)
                     .Select(t => new TodoDto
                     {
@@ -40,6 +55,10 @@ namespace TodoApi.Controllers
 
                 return Ok(todos);
             }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized("Invalid user token");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while fetching todos");
@@ -53,7 +72,10 @@ namespace TodoApi.Controllers
         {
             try
             {
-                var todo = await _context.Todos.FindAsync(id);
+                var userId = GetCurrentUserId();
+                
+                var todo = await _context.Todos
+                    .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
                 if (todo == null)
                 {
@@ -72,6 +94,10 @@ namespace TodoApi.Controllers
 
                 return Ok(todoDto);
             }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized("Invalid user token");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while fetching todo with ID {TodoId}", id);
@@ -85,6 +111,8 @@ namespace TodoApi.Controllers
         {
             try
             {
+                var userId = GetCurrentUserId();
+                
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);
@@ -95,7 +123,8 @@ namespace TodoApi.Controllers
                     Title = createTodoDto.Title,
                     Description = createTodoDto.Description,
                     IsCompleted = false,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    UserId = userId
                 };
 
                 _context.Todos.Add(todo);
@@ -113,6 +142,10 @@ namespace TodoApi.Controllers
 
                 return CreatedAtAction(nameof(GetTodo), new { id = todo.Id }, todoDto);
             }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized("Invalid user token");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while creating todo");
@@ -126,12 +159,16 @@ namespace TodoApi.Controllers
         {
             try
             {
+                var userId = GetCurrentUserId();
+                
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);
                 }
 
-                var todo = await _context.Todos.FindAsync(id);
+                var todo = await _context.Todos
+                    .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+                    
                 if (todo == null)
                 {
                     return NotFound($"Todo with ID {id} not found");
@@ -157,6 +194,10 @@ namespace TodoApi.Controllers
 
                 return Ok(todoDto);
             }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized("Invalid user token");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while updating todo with ID {TodoId}", id);
@@ -170,7 +211,11 @@ namespace TodoApi.Controllers
         {
             try
             {
-                var todo = await _context.Todos.FindAsync(id);
+                var userId = GetCurrentUserId();
+                
+                var todo = await _context.Todos
+                    .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+                    
                 if (todo == null)
                 {
                     return NotFound($"Todo with ID {id} not found");
@@ -180,6 +225,10 @@ namespace TodoApi.Controllers
                 await _context.SaveChangesAsync();
 
                 return NoContent();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized("Invalid user token");
             }
             catch (Exception ex)
             {
@@ -194,7 +243,11 @@ namespace TodoApi.Controllers
         {
             try
             {
-                var todo = await _context.Todos.FindAsync(id);
+                var userId = GetCurrentUserId();
+                
+                var todo = await _context.Todos
+                    .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+                    
                 if (todo == null)
                 {
                     return NotFound($"Todo with ID {id} not found");
@@ -217,6 +270,10 @@ namespace TodoApi.Controllers
                 };
 
                 return Ok(todoDto);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized("Invalid user token");
             }
             catch (Exception ex)
             {

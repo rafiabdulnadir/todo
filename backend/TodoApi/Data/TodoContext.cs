@@ -10,10 +10,23 @@ namespace TodoApi.Data
         }
 
         public DbSet<Todo> Todos { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Configure User entity
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+                entity.HasIndex(e => e.Email).IsUnique();
+                entity.Property(e => e.PasswordHash).IsRequired();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+            });
 
             // Configure Todo entity
             modelBuilder.Entity<Todo>(entity =>
@@ -23,35 +36,16 @@ namespace TodoApi.Data
                 entity.Property(e => e.Description).HasMaxLength(1000);
                 entity.Property(e => e.IsCompleted).HasDefaultValue(false);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+                entity.Property(e => e.UserId).IsRequired();
+                
+                // Configure relationship
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.Todos)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Seed some initial data
-            modelBuilder.Entity<Todo>().HasData(
-                new Todo
-                {
-                    Id = 1,
-                    Title = "Learn React.js",
-                    Description = "Complete the React.js tutorial and build a sample project",
-                    IsCompleted = false,
-                    CreatedAt = DateTime.UtcNow
-                },
-                new Todo
-                {
-                    Id = 2,
-                    Title = "Build ASP.NET Core API",
-                    Description = "Create a RESTful API using ASP.NET Core and Entity Framework",
-                    IsCompleted = true,
-                    CreatedAt = DateTime.UtcNow.AddDays(-1)
-                },
-                new Todo
-                {
-                    Id = 3,
-                    Title = "Deploy to Production",
-                    Description = "Deploy the full-stack application to a cloud provider",
-                    IsCompleted = false,
-                    CreatedAt = DateTime.UtcNow.AddHours(-2)
-                }
-            );
+            // Note: Removed seed data since todos now require a UserId
         }
     }
 }
