@@ -18,5 +18,12 @@ namespace TodoApi.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         public DateTime? UpdatedAt { get; set; }
+
+        // Foreign key for User
+        [Required]
+        public int UserId { get; set; }
+
+        // Navigation property
+        public User User { get; set; } = null!;
     }
 }
